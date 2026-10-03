@@ -6,8 +6,8 @@ dotenv.config();
 
 const PORT = process.env.PORT || 3000;
 
-app.get('/', (req, res) => {
-    res.status(200).send('Hello from  Accusation');
-})
+app.get("/", (req, res) => {
+  res.status(200).send("Hello from  Accusation");
+});
 
 export default app;
