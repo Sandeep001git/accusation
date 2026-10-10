@@ -1,19 +1,20 @@
 // Verify user ownership and admin access rules.
-import test from "node:test";
-import assert from "node:assert/strict";
+import { describe, expect, test } from "@jest/globals";
 import { canAccessUser, isAdmin } from "../src/utils/user-authorization.js";
 
-test("users may access only their own account", () => {
-  const actor = { id: 4, role: "user" };
+describe("user authorization", () => {
+  test("users may access only their own account", () => {
+    const actor = { id: 4, role: "user" };
 
-  assert.equal(canAccessUser(actor, 4), true);
-  assert.equal(canAccessUser(actor, 5), false);
-  assert.equal(isAdmin(actor), false);
-});
+    expect(canAccessUser(actor, 4)).toBe(true);
+    expect(canAccessUser(actor, 5)).toBe(false);
+    expect(isAdmin(actor)).toBe(false);
+  });
 
-test("admins may access other user accounts", () => {
-  const actor = { id: 4, role: "admin" };
+  test("admins may access other user accounts", () => {
+    const actor = { id: 4, role: "admin" };
 
-  assert.equal(canAccessUser(actor, 5), true);
-  assert.equal(isAdmin(actor), true);
+    expect(canAccessUser(actor, 5)).toBe(true);
+    expect(isAdmin(actor)).toBe(true);
+  });
 });
