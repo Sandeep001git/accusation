@@ -6,20 +6,15 @@ const securityMiddleware = async (req, res, next) => {
   try {
     const role = req.user?.role || "guest";
     let limit;
-    let message;
     switch (role) {
       case "admin":
         limit = 20;
-        message = "Admin access limit exceeded 20 request/minute.";
         break;
       case "user":
         limit = 10;
-        message = "User access limit exceeded 10 request/minute.";
         break;
       default:
         limit = 5;
-        // eslint-disable-next-line no-unused-vars
-        message = "Guest access limit exceeded 5 request/minute.";
         break;
     }
 
@@ -66,8 +61,8 @@ const securityMiddleware = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.log("Error in security middleware:", error);
-    res.status(500).json({ message: "Internal Server Error" });
+    logger.error('Security middleware failed', { error });
+    return next(error);
   }
 };
 export default securityMiddleware;

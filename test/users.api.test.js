@@ -13,6 +13,7 @@ const dbLimit = jest.fn(async () =>
 const dbWhere = jest.fn(() => ({ limit: dbLimit }));
 const dbFrom = jest.fn(() => ({ where: dbWhere }));
 const dbSelect = jest.fn(() => ({ from: dbFrom }));
+const databaseSql = jest.fn();
 
 const service = {
   deleteUser: jest.fn(),
@@ -21,17 +22,18 @@ const service = {
   updateUser: jest.fn(),
 };
 const createUser = jest.fn();
+const authenticateUser = jest.fn();
 
 jest.unstable_mockModule('#config/database.js', () => ({
   db: { select: dbSelect },
-  sql: jest.fn(),
+  sql: databaseSql,
 }));
 jest.unstable_mockModule('#middleware/security.middleware.js', () => ({
   default: (req, res, next) => next(),
 }));
 jest.unstable_mockModule('#services/user.service.js', () => service);
 jest.unstable_mockModule('#services/auth.service.js', () => ({
-  authenticateUser: jest.fn(),
+  authenticateUser,
   createUser,
 }));
 
@@ -62,11 +64,13 @@ describe('user API routes', () => {
     dbWhere.mockClear();
     dbFrom.mockClear();
     dbSelect.mockClear();
+    databaseSql.mockReset();
     service.deleteUser.mockReset();
     service.getUserById.mockReset();
     service.listUsers.mockReset();
     service.updateUser.mockReset();
     createUser.mockReset();
+    authenticateUser.mockReset();
   });
 
   test('creates an account through the existing signup flow', async () => {
@@ -101,11 +105,123 @@ describe('user API routes', () => {
     expect(createUser).not.toHaveBeenCalled();
   });
 
+  test('returns conflict when signup email is already registered', async () => {
+    createUser.mockRejectedValue(
+      new Error('User with this email already exists')
+    );
+
+    const response = await request(app).post('/api/auth/sign-up').send({
+      name: 'Test User',
+      email: 'test@example.com',
+      password: 'StrongPassword123!',
+    });
+
+    expect(response.status).toBe(409);
+    expect(response.body).toEqual({ error: 'Email already exists' });
+  });
+
+  test('does not expose unexpected signup errors to clients', async () => {
+    createUser.mockRejectedValue(new Error('database internals'));
+
+    const response = await request(app).post('/api/auth/sign-up').send({
+      name: 'Test User',
+      email: 'test@example.com',
+      password: 'StrongPassword123!',
+    });
+
+    expect(response.status).toBe(500);
+    expect(response.body).toEqual({ error: 'Internal server error' });
+  });
+
+  test('returns a session cookie after valid sign-in', async () => {
+    authenticateUser.mockResolvedValue(user);
+
+    const response = await request(app).post('/api/auth/sign-in').send({
+      email: user.email,
+      password: 'StrongPassword123!',
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body.user).toMatchObject({
+      id: user.id,
+      email: user.email,
+    });
+    expect(response.headers['set-cookie'][0]).toContain('token=');
+  });
+
+  test('rejects invalid sign-in credentials', async () => {
+    authenticateUser.mockResolvedValue(null);
+
+    const response = await request(app).post('/api/auth/sign-in').send({
+      email: user.email,
+      password: 'wrong-password',
+    });
+
+    expect(response.status).toBe(401);
+    expect(response.body).toEqual({ error: 'Invalid email or password' });
+  });
+
+  test('rejects invalid sign-in request data before authentication', async () => {
+    const response = await request(app)
+      .post('/api/auth/sign-in')
+      .send({ email: 'not-an-email', password: 'short' });
+
+    expect(response.status).toBe(400);
+    expect(authenticateUser).not.toHaveBeenCalled();
+  });
+
+  test('forwards unexpected sign-in errors to safe error handling', async () => {
+    authenticateUser.mockRejectedValue(new Error('database internals'));
+
+    const response = await request(app).post('/api/auth/sign-in').send({
+      email: user.email,
+      password: 'StrongPassword123!',
+    });
+
+    expect(response.status).toBe(500);
+    expect(response.body).toEqual({ error: 'Internal server error' });
+  });
+
+  test('clears the session cookie on sign-out', async () => {
+    const response = await request(app).post('/api/auth/sign-out');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ message: 'User signed out successfully' });
+    expect(response.headers['set-cookie'][0]).toContain('token=');
+    expect(response.headers['set-cookie'][0]).toMatch(/Expires=/i);
+  });
+
   test('requires authentication for account reads', async () => {
     const response = await request(app).get('/api/users/me');
 
     expect(response.status).toBe(401);
     expect(service.getUserById).not.toHaveBeenCalled();
+  });
+
+  test('reports database readiness when the database is available', async () => {
+    databaseSql.mockResolvedValue([]);
+
+    const response = await request(app).get('/health');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      status: 'OK',
+      database: 'connected',
+    });
+    expect(response.body.timestamp).toEqual(expect.any(String));
+    expect(response.body.uptime).toEqual(expect.any(Number));
+  });
+
+  test('reports unavailable readiness when the database query fails', async () => {
+    databaseSql.mockRejectedValue(new Error('database unavailable'));
+
+    const response = await request(app).get('/health');
+
+    expect(response.status).toBe(503);
+    expect(response.body).toEqual({
+      status: 'ERROR',
+      database: 'unavailable',
+    });
   });
 
   test("retrieves the authenticated user's account", async () => {
