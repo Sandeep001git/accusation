@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, jest, test } from '@jest/globals';
+import { beforeEach, describe, expect, jest, test } from "@jest/globals";
 
 const protect = jest.fn();
 const withRule = jest.fn(() => ({ protect }));
@@ -7,24 +7,24 @@ const logError = jest.fn();
 const logWarn = jest.fn();
 const slidingWindow = jest.fn((rule) => rule);
 
-jest.unstable_mockModule('#config/arcjet.js', () => ({
+jest.unstable_mockModule("#config/arcjet.js", () => ({
   default: arcjetClient,
 }));
-jest.unstable_mockModule('#config/logger.js', () => ({
+jest.unstable_mockModule("#config/logger.js", () => ({
   logger: { error: logError, warn: logWarn },
 }));
-jest.unstable_mockModule('@arcjet/node', () => ({
+jest.unstable_mockModule("@arcjet/node", () => ({
   slidingWindow,
 }));
 
 const { default: securityMiddleware } =
-  await import('../src/middleware/security.middleware.js');
+  await import("../src/middleware/security.middleware.js");
 
 const createRequest = (role = undefined) => ({
-  get: jest.fn(() => 'test-agent'),
-  ip: '127.0.0.1',
-  path: '/test',
-  method: 'GET',
+  get: jest.fn(() => "test-agent"),
+  ip: "127.0.0.1",
+  path: "/test",
+  method: "GET",
   user: role ? { role } : undefined,
 });
 
@@ -43,13 +43,13 @@ const allowed = () => ({
 const deniedFor = (reasonName) => ({
   isDenied: () => true,
   reason: {
-    isBot: () => reasonName === 'bot',
-    isShield: () => reasonName === 'shield',
-    isRateLimit: () => reasonName === 'rateLimit',
+    isBot: () => reasonName === "bot",
+    isShield: () => reasonName === "shield",
+    isRateLimit: () => reasonName === "rateLimit",
   },
 });
 
-describe('security middleware', () => {
+describe("security middleware", () => {
   beforeEach(() => {
     protect.mockReset().mockResolvedValue(allowed());
     withRule.mockClear();
@@ -59,10 +59,10 @@ describe('security middleware', () => {
   });
 
   test.each([
-    ['guest', undefined, 5],
-    ['user', 'user', 10],
-    ['admin', 'admin', 20],
-  ])('applies the %s rate limit', async (name, role, max) => {
+    ["guest", undefined, 5],
+    ["user", "user", 10],
+    ["admin", "admin", 20],
+  ])("applies the %s rate limit", async (name, role, max) => {
     const req = createRequest(role);
     const res = createResponse();
     const next = jest.fn();
@@ -70,19 +70,19 @@ describe('security middleware', () => {
     await securityMiddleware(req, res, next);
 
     expect(slidingWindow).toHaveBeenCalledWith(
-      expect.objectContaining({ max, interval: 1, mode: 'LIVE' })
+      expect.objectContaining({ max, interval: 1, mode: "LIVE" })
     );
     expect(next).toHaveBeenCalledTimes(1);
     expect(res.status).not.toHaveBeenCalled();
   });
 
   test.each([
-    ['bot', 'Access denied: Bot detected'],
-    ['shield', 'Access denied: Shield detected'],
-    ['rateLimit', 'Access denied: Rate limit exceeded'],
-  ])('rejects Arcjet %s decisions', async (reasonName, message) => {
+    ["bot", "Access denied: Bot detected"],
+    ["shield", "Access denied: Shield detected"],
+    ["rateLimit", "Access denied: Rate limit exceeded"],
+  ])("rejects Arcjet %s decisions", async (reasonName, message) => {
     protect.mockResolvedValue(deniedFor(reasonName));
-    const req = createRequest('user');
+    const req = createRequest("user");
     const res = createResponse();
     const next = jest.fn();
 
@@ -94,15 +94,15 @@ describe('security middleware', () => {
     expect(logWarn).toHaveBeenCalledTimes(1);
   });
 
-  test('forwards Arcjet failures to centralized error handling', async () => {
-    const error = new Error('Arcjet unavailable');
+  test("forwards Arcjet failures to centralized error handling", async () => {
+    const error = new Error("Arcjet unavailable");
     protect.mockRejectedValue(error);
     const res = createResponse();
     const next = jest.fn();
 
     await securityMiddleware(createRequest(), res, next);
 
-    expect(logError).toHaveBeenCalledWith('Security middleware failed', {
+    expect(logError).toHaveBeenCalledWith("Security middleware failed", {
       error,
     });
     expect(next).toHaveBeenCalledWith(error);

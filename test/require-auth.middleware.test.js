@@ -2,7 +2,8 @@
 import { beforeEach, describe, expect, jest, test } from "@jest/globals";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || " JWT-TOKEN";
+const JWT_SECRET = process.env.JWT_SECRET || "test-only-jwt-secret";
+process.env.JWT_SECRET = JWT_SECRET;
 
 const dbLimit = jest.fn();
 const dbWhere = jest.fn(() => ({ limit: dbLimit }));

@@ -9,7 +9,7 @@ const logger = createLogger({
   format: _format.combine(
     _format.timestamp(),
     _format.errors({ stack: true }),
-    _format.json(),
+    _format.json()
   ),
   defaultMeta: { service: "accusation-api" },
   transports: [
@@ -24,7 +24,7 @@ logger.add(
       process.env.NODE_ENV === "production"
         ? _format.json()
         : _format.combine(_format.colorize(), _format.simple()),
-  }),
+  })
 );
 
 export { logger };

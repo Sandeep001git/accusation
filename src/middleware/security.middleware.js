@@ -61,7 +61,7 @@ const securityMiddleware = async (req, res, next) => {
 
     next();
   } catch (error) {
-    logger.error('Security middleware failed', { error });
+    logger.error("Security middleware failed", { error });
     return next(error);
   }
 };

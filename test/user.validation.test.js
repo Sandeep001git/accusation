@@ -9,22 +9,22 @@ import {
 describe("user request validation", () => {
   test("normalizes permitted profile fields and rejects mass assignment", () => {
     expect(
-      updateUserSchema.parse({ name: "  New Name ", email: " A@Example.com " }),
+      updateUserSchema.parse({ name: "  New Name ", email: " A@Example.com " })
     ).toEqual({ name: "New Name", email: "a@example.com" });
     expect(updateUserSchema.safeParse({}).success).toBe(false);
     expect(updateUserSchema.safeParse({ role: "admin" }).success).toBe(false);
     expect(updateUserSchema.safeParse({ password: "secret" }).success).toBe(
-      false,
+      false
     );
   });
 
   test("validates profile field lengths and email format", () => {
     expect(updateUserSchema.safeParse({ name: "ab" }).success).toBe(false);
     expect(updateUserSchema.safeParse({ name: "n".repeat(31) }).success).toBe(
-      false,
+      false
     );
     expect(updateUserSchema.safeParse({ email: "not-an-email" }).success).toBe(
-      false,
+      false
     );
   });
 

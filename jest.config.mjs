@@ -1,8 +1,11 @@
 /** @type {import('jest').Config} */
 export default {
   clearMocks: true,
-  collectCoverage: false,
-  testEnvironment: 'node',
-  testMatch: ['<rootDir>/test/**/*.test.js'],
+  collectCoverage: true,
+  collectCoverageFrom: ["<rootDir>/src/**/*.js"],
+  coverageDirectory: "<rootDir>/coverage",
+  coverageReporters: ["text", "html"],
+  testEnvironment: "node",
+  testMatch: ["<rootDir>/test/**/*.test.js"],
   transform: {},
 };

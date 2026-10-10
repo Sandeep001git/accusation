@@ -3,6 +3,28 @@
 This project uses Docker Compose for local development and production. Docker
 Compose v2 and a running Docker Engine are required.
 
+## Continuous integration
+
+GitHub Actions runs `.github/workflows/ci.yml` for pushes, pull requests, and
+manual runs. The workflow uses Node.js `24.15.0` and the committed npm lockfile.
+It runs linting, tests, dependency audits, production Compose validation, and
+builds both the migration and production Docker images. Test coverage is
+uploaded as a short-lived workflow artifact.
+
+The workflow uses only read access to repository contents and does not receive
+production credentials. The current repository configuration identifies Neon
+as the database provider but does not identify a hosting target or registry for
+the API. Therefore, it intentionally does not deploy or publish images.
+Configure the actual hosting target, protected production environment, and its
+minimum required credentials before adding a deployment job. Database
+migrations should remain a deliberate deployment step and must not run against
+production from untrusted pull requests.
+
+The production dependency audit currently reports no vulnerabilities. The
+full dependency audit reports moderate transitive advisories in development
+tools; it reports them in CI and fails on high or critical advisories rather
+than forcing breaking dependency downgrades.
+
 ## Development
 
 1. Create `.env.development` and set development-only credentials. The
