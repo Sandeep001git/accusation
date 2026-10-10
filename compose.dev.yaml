@@ -1,0 +1,72 @@
+services:
+  neon-local:
+    image: neondatabase/neon_local:latest
+    environment:
+      NEON_API_KEY: ${NEON_API_KEY:?Set NEON_API_KEY in .env.development}
+      NEON_PROJECT_ID: ${NEON_PROJECT_ID:?Set NEON_PROJECT_ID in .env.development}
+      BRANCH_ID: ${BRANCH_ID:?Set BRANCH_ID to a dedicated development branch}
+      PARENT_BRANCH_ID: ${PARENT_BRANCH_ID:-main}
+      DELETE_BRANCH: ${DELETE_BRANCH:-true}
+    volumes:
+      # persist branch metadata per git branch
+      - ./.neon_local:/temp/.neon_local
+      - ./.git/HEAD:/temp/.git/HEAD:ro,consistent
+    restart: unless-stopped
+
+  migrate:
+    build:
+      context: .
+      target: migrate
+    env_file:
+      - .env.development
+    environment:
+      NODE_ENV: development
+      USE_NEON_LOCAL: "true"
+      # The Neon serverless driver requires a username even when using Neon Local.
+      DATABASE_URL: postgresql://neondb_owner@neon-local:5432/neondb
+    command: ["npm", "run", "db:migrate:local"]
+    depends_on:
+      neon-local:
+        condition: service_started
+    restart: "no"
+
+  app:
+    build:
+      context: .
+      target: development
+    command: ["npm", "run", "dev"]
+    env_file:
+      - .env.development
+    environment:
+      NODE_ENV: development
+      USE_NEON_LOCAL: "true"
+      # Keep the app on 3000 in-container; Compose publishes it on host port 3001.
+      PORT: 3000
+      DATABASE_URL: postgresql://neondb_owner@neon-local:5432/neondb
+    volumes:
+      - .:/app
+      - development_node_modules:/app/node_modules
+      - ./logs:/app/logs
+    depends_on:
+      neon-local:
+        condition: service_started
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:3001:3000"
+    init: true
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 10s
+      start_period: 20s
+      retries: 3
+
+volumes:
+  development_node_modules:

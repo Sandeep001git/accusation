@@ -1,7 +1,10 @@
 import jwt from "jsonwebtoken";
 import { logger } from "#config/logger.js";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key"; // Replace with your own secret
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error("JWT_SECRET environment variable is required");
+}
 const JWT_EXPIRES_IN = "1d"; // Token expiration time
 
 export const jwtToken = {

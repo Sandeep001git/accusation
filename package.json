@@ -14,14 +14,20 @@
     "#validations/*": "./src/validations/*"
   },
   "scripts": {
-    "dev": "node --watch src/index.js",
+    "dev": "node --env-file=.env.development --watch src/index.js",
+    "start": "node --env-file=.env.production src/index.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:migrate:dev": "node --env-file=.env.development ./node_modules/drizzle-kit/bin.cjs migrate",
+    "db:migrate:prod": "node --env-file=.env.production ./node_modules/drizzle-kit/bin.cjs migrate",
+    "db:migrate:local": "node scripts/migrate-local.js",
+    "db:studio": "drizzle-kit studio",
+    "dev:docker": "bash ./scripts/dev.sh",
+    "prod:docker": "bash .//scripts/prod.sh"
   },
   "repository": {
     "type": "git",

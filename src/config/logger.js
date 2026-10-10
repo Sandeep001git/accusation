@@ -18,12 +18,13 @@ const logger = createLogger({
   ],
 });
 
-if (process.env.NODE_ENV !== "production") {
-  logger.add(
-    new _transports.Console({
-      format: _format.combine(_format.colorize(), _format.simple()),
-    }),
-  );
-}
+logger.add(
+  new _transports.Console({
+    format:
+      process.env.NODE_ENV === "production"
+        ? _format.json()
+        : _format.combine(_format.colorize(), _format.simple()),
+  }),
+);
 
 export { logger };

@@ -1,0 +1,28 @@
+services:
+  # Apply committed Drizzle migrations before starting the API.
+  migrate:
+    build:
+      context: .
+      target: migrate
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+    restart: "no"
+
+  backend:
+    build:
+      context: .
+      target: production
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    # Bind to loopback; place a reverse proxy in front for remote access.
+    ports:
+      - "127.0.0.1:3000:3000"
+    init: true
+    restart: unless-stopped

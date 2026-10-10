@@ -1,16 +1,15 @@
-/* eslint-disable preserve-caught-error */
 import bcrypt from "bcrypt";
 import { logger } from "#config/logger.js";
 import { db } from "#config/database.js";
 import { eq } from "drizzle-orm";
 import { users } from "#models/user.model.js";
 
-export const hashPassword = (password) => {
+export const hashPassword = async (password) => {
   try {
-    return bcrypt.hashSync(password, 10);
+    return await bcrypt.hash(password, 10);
   } catch (error) {
     logger.error("Error occurred while hashing password", error);
-    throw new Error("Error occurred while hashing password");
+    throw new Error("Error occurred while hashing password", { cause: error });
   }
 };
 
@@ -24,7 +23,7 @@ export const createUser = async ({ name, email, password, role = "user" }) => {
     if (existingUser) {
       throw new Error("User with this email already exists");
     }
-    const hashedPassword = hashPassword(password);
+    const hashedPassword = await hashPassword(password);
     const now = new Date();
 
     const [newUser] = await db
@@ -53,6 +52,9 @@ export const createUser = async ({ name, email, password, role = "user" }) => {
     return newUser;
   } catch (error) {
     logger.error("Error occurred while creating user", error);
+    if (error?.code === "23505" && error.constraint === "users_email_unique") {
+      throw new Error("User with this email already exists", { cause: error });
+    }
     throw error;
   }
 };
