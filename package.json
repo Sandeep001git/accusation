@@ -16,6 +16,7 @@
   "scripts": {
     "dev": "node --env-file=.env.development --watch src/index.js",
     "start": "node --env-file=.env.production src/index.js",
+    "test": "node --test",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
@@ -27,7 +28,7 @@
     "db:migrate:local": "node scripts/migrate-local.js",
     "db:studio": "drizzle-kit studio",
     "dev:docker": "bash ./scripts/dev.sh",
-    "prod:docker": "bash .//scripts/prod.sh"
+    "prod:docker": "bash ./scripts/prod.sh"
   },
   "repository": {
     "type": "git",

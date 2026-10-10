@@ -18,12 +18,6 @@ export const jwtToken = {
     }
   },
   verify: (token) => {
-    try {
-      return jwt.verify(token, JWT_SECRET);
-    } catch (error) {
-      logger.error("Error verifying JWT token:", error);
-      // eslint-disable-next-line preserve-caught-error
-      throw new Error("Error authenticating JWT token");
-    }
+    return jwt.verify(token, JWT_SECRET);
   },
 };

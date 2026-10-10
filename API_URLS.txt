@@ -1,0 +1,31 @@
+Accusation API URLs
+===================
+
+Development Docker base URL: http://127.0.0.1:3001
+Production Compose base URL: http://127.0.0.1:3000
+
+Authentication
+--------------
+POST   /api/auth/sign-up     Create an account and receive the token cookie.
+POST   /api/auth/sign-in     Sign in and receive the token cookie.
+POST   /api/auth/sign-out    Clear the token cookie.
+
+User accounts
+-------------
+POST   /api/users            Create an account (same signup behavior).
+GET    /api/users/me         Read the signed-in user's profile.
+PATCH  /api/users/me         Update the signed-in user's name and/or email.
+DELETE /api/users/me         Delete the signed-in user's account.
+
+GET    /api/users            List users; administrator only.
+GET    /api/users/{id}       Read own account or any account as administrator.
+PATCH  /api/users/{id}       Update own account or any account as administrator.
+DELETE /api/users/{id}       Delete own account or any account as administrator.
+
+Except for signup and signin, user endpoints require the HTTP-only "token"
+cookie returned by signup/signin. Substitute a numeric account ID for {id}.
+Only name and email can be changed through profile endpoints; role and password
+are not editable there.
+
+Example development URL:
+http://127.0.0.1:3001/api/users/me

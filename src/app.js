@@ -7,6 +7,8 @@ import morgan from "morgan";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import securityMiddleware from "#middleware/security.middleware.js";
+import errorHandler, { notFoundHandler } from "#middleware/error.middleware.js";
+import userRoutes from "#routes/user.routes.js";
 import { sql as databaseSql } from "#config/database.js";
 
 dotenv.config();
@@ -45,18 +47,20 @@ app.get("/health", async (req, res) => {
   }
 });
 
-app.use(securityMiddleware); // Use the scheduler middleware for all application routes
-
-app.get("/", (req, res) => {
+app.get("/", securityMiddleware, (req, res) => {
   logger.info("Received request to app endpoint");
   res.status(200).send("Hello from  Accusation");
 });
-app.get("/api", (req, res) => {
+app.get("/api", securityMiddleware, (req, res) => {
   res.status(200).json({
     message: "Accusation API is running",
   });
 });
 
-app.use("/api/auth", authRoutes);
+app.use("/api/auth", securityMiddleware, authRoutes);
+// Mount user account CRUD separately from authentication endpoints.
+app.use("/api/users", userRoutes);
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 export default app;

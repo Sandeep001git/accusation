@@ -4,6 +4,18 @@ import { db } from "#config/database.js";
 import { eq } from "drizzle-orm";
 import { users } from "#models/user.model.js";
 
+const isEmailConflict = (error) => {
+  for (let current = error; current; current = current.cause) {
+    if (
+      current.code === "23505" &&
+      current.constraint === "users_email_unique"
+    ) {
+      return true;
+    }
+  }
+  return false;
+};
+
 export const hashPassword = async (password) => {
   try {
     return await bcrypt.hash(password, 10);
@@ -52,7 +64,7 @@ export const createUser = async ({ name, email, password, role = "user" }) => {
     return newUser;
   } catch (error) {
     logger.error("Error occurred while creating user", error);
-    if (error?.code === "23505" && error.constraint === "users_email_unique") {
+    if (isEmailConflict(error)) {
       throw new Error("User with this email already exists", { cause: error });
     }
     throw error;

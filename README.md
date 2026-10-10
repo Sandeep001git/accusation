@@ -72,18 +72,51 @@ serverless driver to the `neon-local` proxy. Running `npm run dev` directly
 does not set that flag and uses the direct `DATABASE_URL` from
 `.env.development`.
 
+## Users API
+
+`POST /api/users` reuses the existing signup flow and creates an account,
+returning the same HTTP-only authentication cookie as
+`POST /api/auth/sign-up`. Authenticated users can retrieve, update, or delete
+their own account using `/api/users/me`. User lists and access to other user
+records are restricted to accounts whose stored role is `admin`. The signed-in
+user's role is loaded from the database on each authenticated request; role
+changes and account deletion therefore take effect immediately.
+
+Update your own profile:
+
+```sh
+curl --cookie "token=$TOKEN" \
+  -X PATCH -H 'Content-Type: application/json' \
+  -d '{"name":"Updated name","email":"new@example.com"}' \
+  http://127.0.0.1:3001/api/users/me
+```
+
+List users as an admin (default page size 20; maximum 100):
+
+```sh
+curl --cookie "token=$ADMIN_TOKEN" \
+  'http://127.0.0.1:3001/api/users?page=1&limit=20'
+```
+
+The API also supports `GET /api/users/:id`, `PATCH /api/users/:id`, and
+`DELETE /api/users/:id`. Only admins may access another user's record. Password
+and role fields are never accepted by the profile update endpoint.
+
 ## Production with Docker Compose
 
 After configuring `.env.production`, build and start the services:
 
 ```sh
-docker compose --project-name accusation-prod -f compose.prod.yaml up --build
+bash scripts/prod.sh up
 ```
 
-Compose loads runtime settings from `.env.production`. The API is published on
+The script checks Docker, Compose, and the required production settings, then
+asks for confirmation before starting containers in the background. Use
+`--yes` only when intentionally running it non-interactively. Compose loads
+runtime settings from `.env.production`. The API is published on
 `127.0.0.1:3000` only; use an appropriately configured reverse proxy if the
 service needs remote access. If you change `PORT`, update the Compose port
-mapping to match. Pass `-f compose.prod.yaml` to each production Compose command.
+mapping to match.
 
 The production Compose file (`compose.prod.yaml`) includes:
 
@@ -100,8 +133,8 @@ container. Stopping Compose does not remove database data.
 Check container state and application readiness:
 
 ```sh
-docker compose --project-name accusation-prod -f compose.prod.yaml ps
-curl --fail http://127.0.0.1:3000/health
+bash scripts/prod.sh status
+bash scripts/prod.sh health
 ```
 
 The readiness endpoint returns HTTP 200 when the API can query the database and
@@ -115,13 +148,14 @@ curl --fail http://127.0.0.1:3000/api
 View logs, restart the API, or stop the stack:
 
 ```sh
-docker compose --project-name accusation-prod -f compose.prod.yaml logs
-docker compose --project-name accusation-prod -f compose.prod.yaml restart
-docker compose --project-name accusation-prod -f compose.prod.yaml down
+bash scripts/prod.sh logs
+bash scripts/prod.sh restart
+bash scripts/prod.sh down
 ```
 
 `down` removes the containers and network. It does not remove data hosted by
-Neon.
+Neon. It asks for confirmation; use `bash scripts/prod.sh down --yes` only when
+intentionally running non-interactively.
 
 ## Database migrations
 
@@ -144,7 +178,7 @@ then restart the matching API:
 
 ```sh
 npm run db:migrate:prod
-docker compose --project-name accusation-prod -f compose.prod.yaml restart
+bash scripts/prod.sh restart
 ```
 
 The migration service uses Drizzle Kit from the development dependencies. The
