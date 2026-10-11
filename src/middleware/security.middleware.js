@@ -24,7 +24,7 @@ const securityMiddleware = async (req, res, next) => {
         interval: 1,
         max: limit,
         name: `${role.toUpperCase()}_ACCESS_LIMIT`,
-      }),
+      })
     );
     const decision = await client.protect(req);
 

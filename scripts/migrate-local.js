@@ -13,14 +13,14 @@ for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
   } catch (error) {
     if (attempt === maxAttempts) {
       console.error(
-        "Neon Local did not become ready; migrations were not started.",
+        "Neon Local did not become ready; migrations were not started."
       );
       throw error;
     }
 
     if (attempt === 1 || attempt % 5 === 0) {
       console.log(
-        `Waiting for Neon Local (${attempt}/${maxAttempts}); retrying in ${retryDelayMs / 1000}s.`,
+        `Waiting for Neon Local (${attempt}/${maxAttempts}); retrying in ${retryDelayMs / 1000}s.`
       );
     }
     // eslint-disable-next-line no-undef
@@ -30,7 +30,7 @@ for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
 
 if (!ready) {
   throw new Error(
-    "Neon Local did not become ready within the startup timeout.",
+    "Neon Local did not become ready within the startup timeout."
   );
 }
 

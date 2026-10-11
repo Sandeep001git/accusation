@@ -18,6 +18,7 @@ services:
       - .env.production
     environment:
       NODE_ENV: production
+    container_name: app
     depends_on:
       migrate:
         condition: service_completed_successfully

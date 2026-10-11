@@ -27,7 +27,7 @@ app.use(
         logger.info(message.trim());
       },
     },
-  }),
+  })
 ); // Use Morgan for HTTP request logging
 
 // const PORT = process.env.PORT || 3000;
